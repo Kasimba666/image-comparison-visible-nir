@@ -1,115 +1,121 @@
 <template>
-  <div class="ImageList">
-    <div class="table-container">
-      <div v-for="(images, folder) in imageGroups" :key="folder" class="folder-group">
-        <h2 class="folder-title">{{ folder }}</h2>
-        <el-table
-            :data="formatTableData(images)"
-            style="width: 100%"
-            @row-click="handleRowClick"
-            :row-class-name="rowClassName"
-        >
-          <el-table-column prop="name"></el-table-column>
-        </el-table>
+  <el-container>
+    <el-aside>
+      <div v-for="(pairs, folder) in imageGroups" :key="folder">
+        <div class="title-group">{{ folder }}</div>
+        <el-menu @select="handleSelect" :default-active="selectedPair">
+          <el-menu-item
+              v-for="(types, name) in pairs"
+              :key="name"
+              :index="name"
+          >
+            <div class="menu-item">{{ name }}</div>
+          </el-menu-item>
+        </el-menu>
       </div>
-    </div>
-    <div class="comparison-container">
-      <el-radio-group v-model="comparisonDirect" size="large">
-        <el-radio-button label="Вертикальный разделитель" value="vertical" />
-        <el-radio-button label="Горизонтальный разделитель" value="horizontal" />
-      </el-radio-group>
-      <div class="select-direct"></div>
-      <img-comparison-slider
-        v-if="!!selectedRow"
-        :direction="comparisonDirect"
-      >
-        <img slot="first" width="100%" :src="selectedRow.folder.visible">
-        <img slot="second" width="100%" :src="selectedRow.folder.nir">
-      </img-comparison-slider>
-    </div>
-  </div>
-
+    </el-aside>
+    <el-main v-if="selectedPair">
+      <div>
+<!--        <h3>{{ selectedPair }}</h3>-->
+        <ImageComparison
+            :first="selectedImages.visible"
+            :second="selectedImages.nir"
+            v-model:isLoadingFirst="isLoadingFirst"
+            v-model:isLoadingSecond="isLoadingSecond"
+        />
+      </div>
+    </el-main>
+  </el-container>
 </template>
 
 <script>
 import { ref, onMounted } from 'vue';
 import { useLoadImages } from '@/composables/useLoadImages';
-import {Pointer} from "@element-plus/icons-vue";
-import { ImgComparisonSlider } from '@img-comparison-slider/vue';
-
+import ImageComparison from '@/components/ImageComparison.vue';
 
 export default {
   name: 'ImageList',
-  components: {Pointer, ImgComparisonSlider},
+  components: {
+    ImageComparison
+  },
   setup() {
+    const isLoadingFirst = ref(false);
+    const isLoadingSecond = ref(false);
     const { imageGroups, loadImages } = useLoadImages();
-    const selectedRow = ref(null);
-    const comparisonDirect = ref(null);
-    const formatTableData = (images) => {
-      const tableData = [];
-      for (const name in images) {
-        tableData.push({ name, folder: images[name] });
+    const selectedPair = ref(null);
+    const selectedImages = ref({ visible: '', nir: '' });
+
+    const handleSelect = (name) => {
+      const folder = Object.keys(imageGroups.value).find(folder =>
+          Object.keys(imageGroups.value[folder]).includes(name)
+      );
+
+      if (folder) {
+        selectedPair.value = name;
+        selectedImages.value = imageGroups.value[folder][name];
       }
-      return tableData;
+
+      isLoadingFirst.value = true;
+      isLoadingSecond.value = true;
+
     };
 
-    const handleRowClick = (row) => {
-      selectedRow.value = row;
-    };
-
-    const rowClassName = ({ row }) => {
-      return row.name === selectedRow.value?.name ? 'selected-row' : '';
-    };
-
-    onMounted(() => {
-      loadImages().then(() => {
-          const firstFolder = Object.keys(imageGroups.value)[0];
-          const firstImageName = Object.keys(imageGroups.value[firstFolder])[0];
-          comparisonDirect.value = 'horizontal';
-          // comparisonDirect.value = 'vertical';
-          selectedRow.value = { name: firstImageName, folder: imageGroups.value[firstFolder][firstImageName] };
-      });
+    onMounted(async () => {
+      await loadImages();
+      const firstFolder = Object.keys(imageGroups.value)[0];
+      const firstPair = Object.keys(imageGroups.value[firstFolder])[0];
+      handleSelect(firstPair);
     });
 
     return {
       imageGroups,
-      formatTableData,
-      handleRowClick,
-      rowClassName,
-      selectedRow,
-      comparisonDirect
+      selectedPair,
+      selectedImages,
+      handleSelect,
+      isLoadingFirst,
+      isLoadingSecond
     };
   }
 };
 </script>
 
-<style lang="scss">
-.ImageList {
-  display: flex;
+<style scoped lang="scss">
+.el-aside {
+  width: 20%;
+  min-width: 100px;
+  max-width: 250px;
+  background-color: #f5f5f5;
+  padding: 5px;
 
-  .table-container {
-    width: 200px;
-    .folder-group {
-      margin-bottom: 0px;
+    .title-group {
+      font-size: 12px;
+      font-weight: bold;
+      margin-top: 8px;
+      margin-bottom: 8px;
+    }
 
-      .folder-title {
-        font-size: 1em;
-        font-weight: bold;
-        margin-bottom: 10px;
+  .el-menu {
+    .el-menu-item {
+      line-height: normal;
+      height: auto;
+
+      .menu-item {
+        font-size: 12px;
+        white-space: pre-line;
+        padding-right: 3px;
+        margin-top: 8px;
+        margin-bottom: 8px;
       }
-
-      .selected-row {
-        background-color: #b3f5f8
+      &.is-active {
+        background-color: hsl(210, 100%, 63%) !important;
+        color: white !important;
       }
     }
   }
-
-  .comparison-container {
-    width: 100%;
-    height: auto;
-    margin-left: 10px;
-    display: flex;
-    flex-flow: column nowrap;
-  }
 }
+
+.el-main {
+  padding: 0 5px;
+}
+
 </style>

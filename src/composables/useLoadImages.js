@@ -4,11 +4,11 @@ export function useLoadImages() {
     const imageGroups = ref({});
 
     const loadImages = async () => {
-        const images = import.meta.glob('/src/assets/images/**/*.jpg', { eager: true });
+        const images = import.meta.glob('/public/assets/images/**/*.jpg', { eager: true });
         const groups = {};
 
         for (const path in images) {
-            const match = path.match(/\/src\/assets\/images\/([^/]+)\/(.*)_(Visible|NIR)\.jpg$/);
+            const match = path.match(/\/public\/assets\/images\/([^/]+)\/(.*)_(Visible|NIR)\.jpg$/);
             if (match) {
                 const folder = match[1];
                 const name = match[2];
@@ -22,7 +22,7 @@ export function useLoadImages() {
                     groups[folder][name] = {};
                 }
 
-                groups[folder][name][type] = path;
+                groups[folder][name][type] = path.replace('/public', '.').replace('/image-comparison-visible-nir/src', '.');;
             }
         }
 

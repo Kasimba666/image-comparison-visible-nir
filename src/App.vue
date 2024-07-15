@@ -1,22 +1,22 @@
 <template>
   <el-container>
-    <el-main>
-      <ImageList />
-    </el-main>
+    <image-list />
   </el-container>
 </template>
 
 <script>
-import ImageList from './components/ImageList.vue';
+import ImageList from '@/components/ImageList.vue';
 
 export default {
   name: 'App',
-  components: {
-    ImageList
-  }
+  components: { ImageList }
 };
 </script>
 
 <style>
-@import "element-plus/dist/index.css";
+body {
+  font-family: 'Avenir', Helvetica, Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+}
 </style>
